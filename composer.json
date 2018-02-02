@@ -8,6 +8,12 @@
     "xml"
   ],
   "type": "library",
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/geryduyck/sepa-direct-debit"
+    }
+  ],
   "license": "MIT",
   "require": {
     "php": ">=5.2"
