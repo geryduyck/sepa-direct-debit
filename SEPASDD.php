@@ -249,7 +249,47 @@ class SEPASDD {
         $Id_DbtrAcct_Node       = $this->xml->createElement("Id");
         $IBAN_DbtrAcct_Node     = $this->xml->createElement("IBAN");
         $RmtInfNode             = $this->xml->createElement("RmtInf");
-        $UstrdNode              = $this->xml->createElement("Ustrd");
+        
+        //structured or unstructured statement
+        $correctStrd            = $this->checkStrd($payment['description']);
+        if ($correctStrd AND $this->config['structured'] AND isset($payment['com_ref']) AND $payment['issuer'])
+        {
+            $StrdNode               = $this->xml->createElement("Strd");
+
+
+            $CdNode                 = $this->xml->createElement("Cd");
+            $CdNode->nodeValue      = $payment['com_ref'];
+
+            $CdOrPrtryNode          = $this->xml->createElement("CdOrPrtry");
+            $CdOrPrtryNode->appendChild($CdNode);
+
+            $IssrNode               = $this->xml->createElement("Issr");
+            $IssrNode->nodeValue    = $payment['issuer'];
+
+            $TpNode                 = $this->xml->createElement("Tp");
+
+            $TpNode->appendChild($CdOrPrtryNode);
+            $TpNode->appendChild($IssrNode);
+
+            $CdtrRefInfNode         = $this->xml->createElement("CdtrRefInf");
+            $CdtrRefInfNode->appendChild($TpNode);
+
+            $RefNode                 = $this->xml->createElement("Ref");
+            $RefNode->nodeValue      = $payment['description'];
+            $CdtrRefInfNode->appendChild($RefNode);
+
+            $StrdNode->appendChild($CdtrRefInfNode);
+        }
+        else
+        {
+            $UstrdNode               = $this->xml->createElement("Ustrd");
+
+            if( version_compare(PHP_VERSION, '5.4.0') >= 0){
+                $UstrdNode->nodeValue       = htmlentities($payment['description'], ENT_XML1, 'UTF-8' );
+            }else{
+                $UstrdNode->nodeValue       = htmlentities($payment['description'], ENT_QUOTES, 'UTF-8' );
+            }
+        }
 
         //Set the payment node information
         $InstdAmtNode->setAttribute("Ccy",$this->config['currency']);
@@ -271,12 +311,6 @@ class SEPASDD {
         }
         
         $IBAN_DbtrAcct_Node->nodeValue  = $payment['IBAN'];
-
-        if( version_compare(PHP_VERSION, '5.4.0') >= 0){
-            $UstrdNode->nodeValue       = htmlentities($payment['description'], ENT_XML1, 'UTF-8' );
-        }else{
-            $UstrdNode->nodeValue       = htmlentities($payment['description'], ENT_QUOTES, 'UTF-8' );     
-        }
 
         $EndToEndIdNode->nodeValue      = ( empty($payment['end_to_end_id']) ? $this->makeId() : $payment['end_to_end_id']);
         
@@ -349,8 +383,16 @@ class SEPASDD {
                     $Id_DbtrAcct_Node->appendChild($IBAN_DbtrAcct_Node);
                 $DbtrAcctNode->appendChild($Id_DbtrAcct_Node); 
             $DrctDbtTxInfNode->appendChild($DbtrAcctNode);
-                
-                $RmtInfNode->appendChild($UstrdNode);
+
+        if (isset($StrdNode))
+        {
+            $RmtInfNode->appendChild($StrdNode);
+        }
+        else
+        {
+            $RmtInfNode->appendChild($UstrdNode);
+        }
+
             $DrctDbtTxInfNode->appendChild($RmtInfNode);
             
                        $PmtIdNode->appendChild($EndToEndIdNode);
@@ -471,7 +513,7 @@ class SEPASDD {
                           "currency");
         $functions = array("IBAN" => "validateIBAN",
                            "BIC" => "validateBIC",
-			   "batch" => "validateBatch");
+                           "batch" => "validateBatch");
         
         foreach ( $required as $requirement ) {
             //Check if the config has the required parameter
@@ -498,6 +540,12 @@ class SEPASDD {
                 }
             }  
             
+        }
+
+        // default or structured statement setting
+        if (!isset($config['structured']))
+        {
+            $this->config['structured'] = false;
         }
         
         return true;
@@ -1004,5 +1052,20 @@ class SEPASDD {
 	    $info['FirstCollectionDate'] = $info['FirstCollectionDate']->format('Y-m-d');
 		return $info;
 	}
+
+    public function checkStrd($input)
+    {
+        $coreNumber = (int)substr($input, 0, 10);
+        $precision  = (int)substr($input, 10, 2);
+
+        $floorValue = floor($coreNumber / 97);
+        $difference = $coreNumber - ($floorValue * 97);
+
+        if ($difference == $precision)
+        {
+            return true;
+        }
+        return false;
+    }
 }
 ?>
