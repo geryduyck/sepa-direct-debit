@@ -251,14 +251,24 @@ class SEPASDD {
         $RmtInfNode             = $this->xml->createElement("RmtInf");
         
         //structured or unstructured statement
-        $correctStrd            = $this->checkStrd($payment['description']);
-        if ($correctStrd AND $this->config['structured'] AND isset($payment['com_ref']) AND $payment['issuer'])
+        if ($this->config['structured'] AND isset($payment['issuer']) )
+        {
+            if ($payment['issuer'] == 'ISO')
+            {
+                $correctStrd = true;
+            }
+            elseif ($payment['issuer'] == 'BBA')
+            {
+                $correctStrd = $this->checkStrd($payment['description']);
+            }
+        }
+
+        if (isset($correctStrd) AND $correctStrd === true)
         {
             $StrdNode               = $this->xml->createElement("Strd");
 
-
             $CdNode                 = $this->xml->createElement("Cd");
-            $CdNode->nodeValue      = $payment['com_ref'];
+            $CdNode->nodeValue      = 'SCOR';
 
             $CdOrPrtryNode          = $this->xml->createElement("CdOrPrtry");
             $CdOrPrtryNode->appendChild($CdNode);

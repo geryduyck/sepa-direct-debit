@@ -97,6 +97,24 @@ The following parameters are optional:
 
 The method will return the end_to_end_id.
 
+###3.2.1 Structured statement
+
+To use a structured statement you need to add the following parameters:
+
+To the config:
+```php
+$config = array(
+                "structured" => true,
+                );
+```
+
+To the payment
+- issuer:			This can be only one of both: 'BBA' (the Belgian Bankers and stockbrokers firms association) which uses OGM-VCS, or 'ISO'.
+
+If BBA is selected, the 'description' parameter MUST be a string of 12 numerical caracters, where the first 10 form the reference and the last 2 the modulo 97 control group.
+(Except if the control group is 0, the control group should be 97)
+
+
 ####Example:
 
 ```php
@@ -108,8 +126,9 @@ $payment = array("name" => "Test von Testenstein",
                  "collection_date" => "2013-07-12",
                  "mandate_id" => "1234",
                  "mandate_date" => "2009-11-01",
-                 "description" => "Test Transaction"
-                );                
+                 "issuer"            => 'BBA',
+                 "description"       => '310126668750',
+                );
 ```
 
 Then use the addPayment method to add the payment to the file:
