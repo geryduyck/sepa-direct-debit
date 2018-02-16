@@ -1071,7 +1071,7 @@ class SEPASDD {
         $floorValue = floor($coreNumber / 97);
         $difference = $coreNumber - ($floorValue * 97);
 
-        if ($difference == $precision)
+        if ($difference == $precision OR ($difference == 0 AND $precision == 97))
         {
             return true;
         }
